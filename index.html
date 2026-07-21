@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<title>TriStrat Terminal — SMC · Liquidity · Momentum</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  /* Fallback + fine-grained styling Tailwind CDN doesn't cover */
+  :root{ --green:#3ddc84; --red:#ff6b5e; --amber:#e8c07a; --accent:#5b8cff; }
+  html{-webkit-text-size-adjust:100%}
+  body{background:#0b0d12;color:#e6e8ee;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+  .card{background:#14161d;border:1px solid rgba(255,255,255,.07);border-radius:14px}
+  .lbl{font-size:.66rem;color:#8b93a7;text-transform:uppercase;letter-spacing:.7px}
+  input,select{background:#1a1d26;border:1px solid rgba(255,255,255,.07);color:#e6e8ee;
+    border-radius:10px;font-size:1rem;outline:none;height:42px;padding:0 12px;width:100%}
+  input:focus,select:focus{border-color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;border:none;height:42px;padding:0 18px;border-radius:10px;
+    font-size:.9rem;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn:hover{filter:brightness(1.12)} .btn:disabled{opacity:.5;cursor:wait}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.12);color:#8b93a7}
+  .btn.ghost:hover{color:#e6e8ee;filter:none}
+  .btn.danger{background:var(--red)}
+  .btn.sm{height:32px;padding:0 12px;font-size:.78rem;border-radius:8px}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.68rem;font-weight:600;line-height:1.5}
+  .badge.long{background:rgba(61,220,132,.13);color:var(--green)}
+  .badge.short{background:rgba(255,107,94,.13);color:var(--red)}
+  .badge.sim{background:rgba(232,192,122,.14);color:var(--amber)}
+  .badge.real{background:rgba(61,220,132,.13);color:var(--green)}
+  .badge.s1{background:rgba(91,140,255,.14);color:#8fb0ff}
+  .badge.s2{background:rgba(232,192,122,.14);color:var(--amber)}
+  .badge.s3{background:rgba(200,120,255,.14);color:#d9a6ff}
+  .badge.val{background:rgba(61,220,132,.13);color:var(--green)}
+  .badge.unval{background:rgba(139,147,167,.14);color:#8b93a7}
+  .badge.live{background:rgba(255,107,94,.16);color:var(--red)}
+  .badge.test{background:rgba(61,220,132,.13);color:var(--green)}
+  .note{font-size:.8rem;color:#8b93a7;line-height:1.55;padding:10px 13px;border-radius:10px;background:rgba(255,255,255,.03)}
+  .note.ok{color:#a7e3c1;background:rgba(61,220,132,.07)}
+  .note.err{color:#f3aca3;background:rgba(255,107,94,.08)}
+  .note.warn{color:var(--amber);background:rgba(232,192,122,.07)}
+  .chip{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:11px;cursor:pointer;
+    background:#1a1d26;border:1px solid rgba(255,255,255,.07);font-size:.82rem;user-select:none;flex:0 0 auto}
+  .chip.active{border-color:var(--accent);background:rgba(91,140,255,.1)}
+  .chip .x{color:#596076;font-size:.9rem;padding:0 2px}
+  .chip .x:hover{color:var(--red)}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .dot.on{background:var(--green);box-shadow:0 0 6px rgba(61,220,132,.8)}
+  .dot.off{background:var(--red)}
+  .dot.mid{background:var(--amber)}
+  .bull{color:var(--green)} .bear{color:var(--red)} .rangec{color:var(--amber)}
+  .feed{max-height:230px;overflow-y:auto;font-size:.78rem}
+  .feed>div{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;gap:8px;align-items:baseline}
+  .feed>div:last-child{border-bottom:none}
+  .sigcard{border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;background:#171a22}
+  .sigcard.validated{border-color:rgba(61,220,132,.35)}
+  .mono{font-variant-numeric:tabular-nums}
+  .bar{height:10px;border-radius:5px;overflow:hidden;display:flex;background:#1a1d26}
+  details summary{cursor:pointer;user-select:none;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  .pulse{animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+  .tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+  .tbl th{color:#8b93a7;font-weight:500;text-align:left;padding:6px 8px;font-size:.66rem;
+    text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.07)}
+  .tbl td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .tbl tr:last-child td{border-bottom:none}
+</style>
+</head>
+<body class="min-h-screen">
+<div class="mx-auto max-w-[1800px] px-3 sm:px-5 pb-16 pt-4">
+
+  <!-- ============================== HEADER ============================== -->
+  <header class="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
+    <div>
+      <h1 class="text-lg sm:text-xl font-bold tracking-tight">TriStrat Terminal</h1>
+      <div class="text-[11px] text-slate-500">SMC/POI · Liquidity Breakout · Momentum Cross — whale-confluence gated</div>
+    </div>
+    <div class="ml-auto flex items-center gap-4 text-xs text-slate-400">
+      <span class="flex items-center gap-2"><span id="wsdot" class="dot off"></span><span id="wstxt">stream off</span></span>
+      <span id="clock" class="mono hidden sm:inline"></span>
+    </div>
+  </header>
+
+  <!-- ============================== WATCHLIST ============================ -->
+  <div class="card p-3 mb-3">
+    <div class="flex flex-wrap items-center gap-2">
+      <div id="watchlist" class="flex gap-2 overflow-x-auto flex-1 min-w-0 pb-1"></div>
+      <div class="flex gap-2 items-center shrink-0">
+        <input id="addsym" list="pairlist" placeholder="add pair…" autocapitalize="characters" autocorrect="off"
+          spellcheck="false" enterkeyhint="go" class="!h-9 !w-36 text-sm">
+        <datalist id="pairlist"></datalist>
+        <button id="addbtn" class="btn sm">Add</button>
+      </div>
+    </div>
+    <div class="text-[11px] text-slate-500 mt-1" id="paircount">loading Binance Futures pairs…</div>
+  </div>
+
+  <!-- ============================== MAIN GRID ============================ -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+
+    <!-- ------- LEFT: chart + order flow (spans 8 on lg) ------- -->
+    <div class="lg:col-span-8 flex flex-col gap-3">
+
+      <div class="card p-4">
+        <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-2">
+          <h2 id="activeSym" class="text-base font-bold">—</h2>
+          <span id="activePrice" class="mono text-lg font-semibold">—</span>
+          <span id="activeChange" class="mono text-sm">—</span>
+          <span class="ml-auto flex items-center gap-3 text-[11px] text-slate-500">
+            <span>15m chart · EMA 20/50/200 · zone edges as lines</span>
+            <button id="refreshBtn" class="btn ghost sm">Re-analyze</button>
+          </span>
+        </div>
+        <div class="flex flex-wrap gap-x-5 gap-y-1 mb-2 text-xs" id="biasRow"></div>
+        <div id="chartMain" class="w-full h-[300px] sm:h-[380px]"></div>
+        <div class="lbl mt-3 mb-1">Cumulative volume delta — live aggressive buy/sell (active symbol)</div>
+        <div id="chartCVD" class="w-full h-[110px] sm:h-[130px]"></div>
+      </div>
+
+      <!-- order flow -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h2 class="text-sm font-semibold">Order book pressure <span class="text-[10px] text-slate-500 font-normal">top 20 · live</span></h2>
+            <span id="bookRatio" class="mono text-xs text-slate-400">—</span>
+          </div>
+          <div class="bar mb-2"><div id="bookBidBar" style="width:50%;background:rgba(61,220,132,.55)"></div><div id="bookAskBar" style="width:50%;background:rgba(255,107,94,.55)"></div></div>
+          <div class="flex justify-between text-[11px] text-slate-400 mono"><span id="bookBid">bid —</span><span id="bookAsk">ask —</span></div>
+          <div id="icebergNote" class="note warn mt-3 hidden"></div>
+          <div class="text-[10px] text-slate-600 mt-2">Wall/iceberg detection is a heuristic: a top-of-book level whose resting size persists well above the median for &gt;60s. It cannot see true hidden orders.</div>
+        </div>
+        <div class="card p-4">
+          <h2 class="text-sm font-semibold mb-2">Large prints <span class="text-[10px] text-slate-500 font-normal">aggressive market orders ≥ threshold · live</span></h2>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="lbl">min $</span>
+            <input id="printMin" type="number" value="100000" step="50000" min="10000" class="!h-8 !w-32 text-sm mono">
+            <span id="printsNet" class="ml-auto mono text-xs">net —</span>
+          </div>
+          <div id="printsFeed" class="feed"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ------- RIGHT: whale radar + on-chain + risk (spans 4 on lg) ------- -->
+    <div class="lg:col-span-4 flex flex-col gap-3">
+
+      <div class="card p-4">
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="text-sm font-semibold">Whale radar <span class="text-[10px] text-slate-500 font-normal">institutional confluence</span></h2>
+          <span id="whaleScoreBig" class="mono text-lg font-bold">0</span>
+        </div>
+        <div class="flex justify-center"><canvas id="radar" class="w-full max-w-[260px] aspect-square"></canvas></div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-[11px] mt-1">
+          <div class="flex justify-between"><span class="text-slate-500">CVD slope 15m</span><span id="m_cvd" class="mono">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Book imbalance</span><span id="m_book" class="mono">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Taker Δ trend</span><span id="m_delta" class="mono">—</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Prints netflow</span><span id="m_prints" class="mono">—</span></div>
+        </div>
+        <div class="note mt-3 text-[11px]">Score −100…+100 from <b>real</b> exchange data only (trades, book, taker delta). The on-chain feed below never validates signals while simulated.</div>
+      </div>
+
+      <div class="card p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-semibold">On-chain whale transfers</h2>
+          <span id="chainBadge" class="badge sim">SIM</span>
+        </div>
+        <div id="chainFeed" class="feed mb-2"></div>
+        <div class="flex justify-between text-[11px] text-slate-400 mb-2">
+          <span>Exchange netflow (session)</span><span id="chainNet" class="mono">—</span>
+        </div>
+        <details>
+          <summary class="text-[11px] text-slate-500 hover:text-slate-300">Use real data (Whale Alert API key)</summary>
+          <div class="flex gap-2 mt-2">
+            <input id="waKey" type="password" placeholder="whale-alert.io key" class="!h-9 text-sm">
+            <button id="waBtn" class="btn sm">Go</button>
+          </div>
+          <div id="waStatus" class="note mt-2 hidden"></div>
+        </details>
+      </div>
+
+      <div class="card p-4">
+        <h2 class="text-sm font-semibold mb-3">Risk framework</h2>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <div><span class="lbl">Account $</span><input id="account" type="number" value="10000" min="0" step="500" inputmode="numeric" class="mono mt-1"></div>
+          <div><span class="lbl">Risk % <span class="text-slate-600">(max 2)</span></span><input id="risk" type="number" value="1" min="0.1" max="2" step="0.1" inputmode="decimal" class="mono mt-1"></div>
+          <div><span class="lbl">Max positions</span><input id="maxpos" type="number" value="3" min="1" max="10" step="1" inputmode="numeric" class="mono mt-1"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div><span class="lbl">Entry</span><input id="calcEntry" type="number" step="any" class="mono mt-1" placeholder="—"></div>
+          <div><span class="lbl">Stop</span><input id="calcStop" type="number" step="any" class="mono mt-1" placeholder="—"></div>
+        </div>
+        <div class="flex flex-wrap gap-x-6 gap-y-1 text-xs mt-2">
+          <div><span class="text-slate-500">Risk $</span> <span id="calcRisk" class="mono font-semibold">—</span></div>
+          <div><span class="text-slate-500">Size</span> <span id="calcSize" class="mono font-semibold">—</span></div>
+          <div><span class="text-slate-500">Notional</span> <span id="calcNotional" class="mono font-semibold">—</span></div>
+        </div>
+        <div class="note mt-3 text-[11px]">Sizing = account × risk% ÷ |entry − stop|. Risk is hard-capped at 2% per trade; the max-positions limit is enforced before any order is sent.</div>
+      </div>
+    </div>
+
+    <!-- ------- FULL WIDTH: signal stream ------- -->
+    <div class="lg:col-span-8 card p-4">
+      <div class="flex flex-wrap items-center gap-3 mb-3">
+        <h2 class="text-sm font-semibold">Signal stream <span id="sigCount" class="text-[10px] text-slate-500 font-normal"></span></h2>
+        <label class="ml-auto flex items-center gap-2 text-[11px] text-slate-400 cursor-pointer">
+          <input type="checkbox" id="gateChk" checked class="!h-4 !w-4 accent-[#5b8cff]">
+          require whale confluence (|score| ≥ <span id="gateThr" class="mono">15</span> &amp; direction match)
+        </label>
+      </div>
+      <div id="signalStream" class="grid grid-cols-1 xl:grid-cols-2 gap-2"></div>
+      <div id="sigEmpty" class="text-center text-slate-500 text-sm py-10 border border-dashed border-white/10 rounded-xl">
+        Engines are warming up — signals appear here as the three strategies scan every watchlist pair.
+        No setup means no signal: the tool will not invent trades.
+      </div>
+    </div>
+
+    <!-- ------- strategy board ------- -->
+    <div class="lg:col-span-4 card p-4">
+      <h2 class="text-sm font-semibold mb-2">Strategy board</h2>
+      <div class="overflow-x-auto"><table class="tbl" id="stratBoard"></table></div>
+      <div class="text-[10px] text-slate-600 mt-2">S1 SMC/POI (1:1 fixed) · S2 liquidity breakout / turtle soup (ATR trail) · S3 EMA+MACD momentum (1:2)</div>
+    </div>
+
+    <!-- ------- execution ------- -->
+    <div class="lg:col-span-12 card">
+      <details id="tradecard">
+        <summary class="flex flex-wrap items-center gap-2 p-4 text-sm font-semibold">
+          <span class="text-slate-500">›</span> Trade execution
+          <span class="text-slate-500 font-normal text-xs">Binance USDT-M Futures · optional</span>
+          <span id="connbadge" class="badge hidden"></span>
+          <span id="openPosCount" class="ml-auto text-[11px] text-slate-500 font-normal"></span>
+        </summary>
+        <div class="px-4 pb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 items-end">
+            <div><span class="lbl">Environment</span>
+              <select id="env" class="mt-1"><option value="test">Testnet — paper money</option><option value="live">LIVE — real money</option></select></div>
+            <div class="lg:col-span-2"><span class="lbl">API key</span><input id="bkey" type="password" placeholder="futures-enabled key" autocomplete="off" class="mt-1"></div>
+            <div class="lg:col-span-2"><span class="lbl">API secret</span><input id="bsecret" type="password" placeholder="secret" autocomplete="off" class="mt-1"></div>
+            <div><span class="lbl">Leverage</span><input id="lev" type="number" value="1" min="1" max="20" step="1" inputmode="numeric" class="mono mt-1"></div>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <button id="connect" class="btn">Connect</button>
+            <button id="cancelall" class="btn ghost">Cancel all (active pair)</button>
+          </div>
+          <div id="tstatus" class="note mt-3 hidden"></div>
+          <div class="note mt-3">Keys stay in this page's memory — never stored, sent only to Binance. Testnet keys: <b>testnet.binancefuture.com</b>.
+            Create keys with <b>futures trading permission only</b> (no withdrawal) and IP-restrict them.
+            Entry, SL and TP are independent orders (futures has no OCO): if an entry never fills, use <b>Cancel all</b>.</div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <footer class="text-slate-500 text-[11px] leading-relaxed mt-6">
+    Educational tool, not financial advice. Mechanical definitions here are one interpretation of discretionary concepts; parameters are unvalidated defaults — journal results on the testnet before trusting any setup with real funds.
+    Breakeven win rate before costs is 1/(1+RR) — 50% at 1:1, 33% at 1:2 — and fees push it higher. The whale-confluence gate is a filter, not a prediction. Public API data may differ from your broker's feed; Binance is geo-blocked in some countries.
+    On-chain items marked SIM are generated locally for interface demonstration and carry no informational value.
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ================================ CONFIG ================================= */
+const CFG = {
+  restBase: "https://fapi.binance.com",
+  wsBase: "wss://fstream.binance.com/stream?streams=",
+  refreshMsActive: 45000,      // strategy recompute cadence, active symbol
+  refreshMsOther: 90000,       // other watchlist symbols (staggered)
+  maxSignals: 60,
+  sigCooldownMs: 30 * 60 * 1000,
+  gateThreshold: 15,           // |whale score| needed to validate a signal
+  // S1 (SMC) — ported parameters
+  s1: { swingK: 2, trendBars: 200, poiBars: 300, fvgMinAtr: 0.30, obDispAtr: 1.5,
+        poiMaxAge: 96, eqLookback: 96, slBufAtr: 0.25, rr: 1.0,
+        typeWeight: { OB: 1.0, FVG: 0.9, IFVG: 0.8 } },
+  // S2 (liquidity breakout / turtle soup)
+  s2: { volMult: 1.5, atrSL: 1.5, rrBreak: 2.0, rrSoup: 1.5, sweepLookback: 4 },
+  // S3 (momentum cross)
+  s3: { rr: 2.0, slBufAtr: 0.25 },
+  sim: { minGapMs: 15000, maxGapMs: 55000 },
+};
+const SESSIONS = [ // UTC hours [start, end)
+  { name: "Asia",   h0: 0,  h1: 8  },
+  { name: "London", h0: 7,  h1: 16 },
+  { name: "NY",     h0: 12, h1: 21 },
+];
+
+/* ================================ STATE ================================== */
+const S = {
+  watch: ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+  active: "BTCUSDT",
+  pairs: [], filters: {},
+  candles: {},          // sym -> {h4,h1,m15,m5} closed candles
+  tickers: {},          // sym -> {last, pct}
+  klineDelta: {},       // sym -> taker-delta trend score (-1..1) from 15m klines
+  cvd: { minutes: [], cum: 0, series: [] },   // active symbol only
+  book: { bid: 0, ask: 0, walls: {} },
+  prints: [], printsNet: 0,
+  chain: { items: [], net: 0, real: false },
+  whale: { score: 0, parts: { cvd: 0, book: 0, delta: 0, prints: 0 } },
+  signals: [],
+  timers: {}, ws: null, wsTries: 0,
+  lastAnalysis: {},     // sym -> S1 analysis result (for chart zones)
+};
+const T = { env: "test", key: "", secret: "", offset: 0, connected: false, avail: 0 };
+const BASES = { test: "https://testnet.binancefuture.com", live: "https://fapi.binance.com" };
+
+/* ================================ UTILS ================================== */
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const fmt = (x, d = 2) => (x === undefined || x === null || !isFinite(x)) ? "—"
+  : x.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtUsd = x => {
+  const a = Math.abs(x);
+  if (a >= 1e9) return (x / 1e9).toFixed(2) + "B";
+  if (a >= 1e6) return (x / 1e6).toFixed(2) + "M";
+  if (a >= 1e3) return (x / 1e3).toFixed(1) + "K";
+  return x.toFixed(0);
+};
+const digitsFor = p => p >= 1000 ? 2 : p >= 10 ? 3 : p >= 0.1 ? 5 : 7;
+const nowStr = () => new Date().toLocaleTimeString("en-GB");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function persist() {
+  try { localStorage.setItem("tristrat", JSON.stringify({
+    watch: S.watch, active: S.active,
+    account: $("account").value, risk: $("risk").value, maxpos: $("maxpos").value,
+    printMin: $("printMin").value, gate: $("gateChk").checked })); } catch (e) {}
+}
+function restore() {
+  try {
+    const j = JSON.parse(localStorage.getItem("tristrat") || "null");
+    if (!j) return;
+    if (Array.isArray(j.watch) && j.watch.length) S.watch = j.watch;
+    if (j.active && S.watch.includes(j.active)) S.active = j.active;
+    if (j.account) $("account").value = j.account;
+    if (j.risk) $("risk").value = clamp(+j.risk, 0.1, 2);
+    if (j.maxpos) $("maxpos").value = j.maxpos;
+    if (j.printMin) $("printMin").value = j.printMin;
+    if (typeof j.gate === "boolean") $("gateChk").checked = j.gate;
+  } catch (e) {}
+}
+
+/* ============================== DATA LAYER =============================== */
+function decsOf(s) { s = String(s).replace(/0+$/, ""); const i = s.indexOf("."); return i < 0 ? 0 : s.length - i - 1; }
+
+async function loadPairs() {
+  const r = await fetch(CFG.restBase + "/fapi/v1/exchangeInfo");
+  if (!r.ok) throw new Error("exchangeInfo " + r.status);
+  const j = await r.json();
+  const syms = [];
+  for (const s of j.symbols) {
+    if (s.status !== "TRADING" || (s.contractType && s.contractType !== "PERPETUAL")) continue;
+    if (!s.symbol.endsWith("USDT")) continue;
+    syms.push(s.symbol);
+    const g = t => (s.filters.find(x => x.filterType === t) || {});
+    S.filters[s.symbol] = {
+      tick: +g("PRICE_FILTER").tickSize || 0.01, tickD: decsOf(g("PRICE_FILTER").tickSize || "0.01"),
+      step: +g("LOT_SIZE").stepSize || 0.001, stepD: decsOf(g("LOT_SIZE").stepSize || "0.001"),
+      minQty: +g("LOT_SIZE").minQty || 0, minNotional: +(g("MIN_NOTIONAL").notional || 0),
+    };
+  }
+  syms.sort();
+  S.pairs = syms;
+  $("pairlist").innerHTML = syms.map(s => `<option value="${s}">`).join("");
+  $("paircount").textContent = syms.length + " perpetual USDT pairs — type to search, click a chip to focus it";
+}
+
+async function fetchKlines(sym, interval, limit) {
+  const u = `${CFG.restBase}/fapi/v1/klines?symbol=${sym}&interval=${interval}&limit=${limit + 1}`;
+  const r = await fetch(u);
+  if (!r.ok) throw new Error(`klines ${sym} ${interval}: ${r.status}`);
+  const j = await r.json();
+  j.pop(); // drop forming candle
+  return j.map(k => ({ t: k[0] / 1000, o: +k[1], h: +k[2], l: +k[3], c: +k[4],
+                       v: +k[5], q: +k[7], tbq: +k[10] })); // q=quote vol, tbq=taker-buy quote vol
+}
+
+async function refreshSymbol(sym) {
+  const [h4, h1, m15, m5] = await Promise.all([
+    fetchKlines(sym, "4h", CFG.s1.trendBars), fetchKlines(sym, "1h", CFG.s1.trendBars),
+    fetchKlines(sym, "15m", CFG.s1.poiBars), fetchKlines(sym, "5m", CFG.s1.poiBars),
+  ]);
+  S.candles[sym] = { h4, h1, m15, m5 };
+  computeKlineDelta(sym);
+  runStrategies(sym);
+  if (sym === S.active) renderActive();
+  renderStratBoard();
+}
+
+/* Taker-delta trend from closed 15m klines: real, per-symbol, no WS needed.
+   delta = taker buy quote − taker sell quote = 2*tbq − q. Normalized vs 20-bar avg volume. */
+function computeKlineDelta(sym) {
+  const m15 = (S.candles[sym] || {}).m15;
+  if (!m15 || m15.length < 30) { S.klineDelta[sym] = 0; return; }
+  const last = m15.slice(-12);                       // 3 hours
+  const avgQ = m15.slice(-40).reduce((a, k) => a + k.q, 0) / 40 || 1;
+  let s = 0;
+  for (const k of last) s += (2 * k.tbq - k.q) / avgQ;
+  S.klineDelta[sym] = clamp(s / last.length, -1, 1);  // avg normalized delta per bar
+}
+
+/* ============================== WEBSOCKETS =============================== */
+function wsSet(state, txt) {
+  $("wsdot").className = "dot " + state;
+  $("wstxt").textContent = txt;
+}
+function buildStreams() {
+  const a = S.active.toLowerCase();
+  const st = [`${a}@aggTrade`, `${a}@depth20@500ms`, `${a}@kline_15m`];
+  for (const s of S.watch) st.push(`${s.toLowerCase()}@miniTicker`);
+  return st.join("/");
+}
+function openWS() {
+  if (S.ws) { try { S.ws.onclose = null; S.ws.close(); } catch (e) {} S.ws = null; }
+  wsSet("mid", "connecting…");
+  const ws = new WebSocket(CFG.wsBase + buildStreams());
+  S.ws = ws;
+  ws.onopen = () => { S.wsTries = 0; wsSet("on", "live"); };
+  ws.onmessage = ev => {
+    let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+    const d = m.data; if (!d) return;
+    if (d.e === "aggTrade") onAggTrade(d);
+    else if (d.e === "kline") onKline(d);
+    else if (d.e === "24hrMiniTicker") onMini(d);
+    else if (m.stream && m.stream.includes("@depth20")) onDepth(d);
+  };
+  ws.onclose = () => {
+    wsSet("off", "reconnecting…");
+    const wait = Math.min(30000, 1000 * Math.pow(2, S.wsTries++));
+    setTimeout(() => { if (S.ws === ws || !S.ws) openWS(); }, wait);
+  };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+}
+
+function onMini(d) {
+  const sym = d.s;
+  const last = +d.c, open = +d.o;
+  S.tickers[sym] = { last, pct: open ? (last - open) / open * 100 : 0 };
+  renderWatchChip(sym);
+  if (sym === S.active) renderPriceHead();
+}
+
+function onKline(d) {
+  if (d.s !== S.active || !charts.candle) return;
+  const k = d.k;
+  charts.candle.update({ time: k.t / 1000, open: +k.o, high: +k.h, low: +k.l, close: +k.c });
+}
+
+/* ===================== WHALE LAYER — real exchange data ================== */
+function onAggTrade(d) {
+  const price = +d.p, qty = +d.q, notional = price * qty;
+  const sell = d.m === true;                    // buyer is maker => aggressive SELL
+  const delta = sell ? -notional : notional;
+  const min = Math.floor(d.T / 60000) * 60000;
+
+  const M = S.cvd.minutes;
+  if (!M.length || M[M.length - 1].t !== min) {
+    M.push({ t: min, delta: 0 });
+    if (M.length > 180) M.shift();
+    S.cvd.series.push({ time: min / 1000, value: S.cvd.cum });
+    if (S.cvd.series.length > 180) S.cvd.series.shift();
+  }
+  M[M.length - 1].delta += delta;
+  S.cvd.cum += delta;
+  cvdDirty = true;
+
+  if (notional >= +$("printMin").value) {
+    S.prints.unshift({ t: d.T, side: sell ? "SELL" : "BUY", notional, price });
+    if (S.prints.length > 40) S.prints.pop();
+    S.printsNet = S.prints.reduce((a, p) => a + (p.side === "BUY" ? p.notional : -p.notional), 0);
+    printsDirty = true;
+  }
+}
+
+function onDepth(d) {
+  const bids = d.b || d.bids, asks = d.a || d.asks;   // futures sends b/a; tolerate both shapes
+  if (!bids || !asks) return;
+  d = { ...d, b: bids, a: asks };
+  let bid = 0, ask = 0;
+  for (const [p, q] of d.b) bid += +p * +q;
+  for (const [p, q] of d.a) ask += +p * +q;
+  S.book.bid = bid; S.book.ask = ask;
+
+  // wall/iceberg heuristic: level in top 5 with notional > 4x median of top20, persisting
+  const all = [...d.b, ...d.a].map(([p, q]) => +p * +q).sort((x, y) => x - y);
+  const med = all[Math.floor(all.length / 2)] || 1;
+  const now = Date.now(), walls = S.book.walls;
+  const seen = new Set();
+  for (const [arr, side] of [[d.b.slice(0, 5), "bid"], [d.a.slice(0, 5), "ask"]]) {
+    for (const [p, q] of arr) {
+      const n = +p * +q;
+      if (n > 4 * med && n > 50000) {
+        const key = side + ":" + p;
+        seen.add(key);
+        if (!walls[key]) walls[key] = { first: now, n, p: +p, side };
+        else walls[key].n = n;
+      }
+    }
+  }
+  for (const k of Object.keys(walls)) { if (!seen.has(k)) delete walls[k]; }
+  bookDirty = true;
+}
+
+let cvdDirty = false, printsDirty = false, bookDirty = false;
+
+function cvdSlopeScore() {   // last 15 one-minute deltas vs typical magnitude
+  const M = S.cvd.minutes;
+  if (M.length < 5) return 0;
+  const last = M.slice(-15);
+  const sum = last.reduce((a, m) => a + m.delta, 0);
+  const mag = M.slice(-60).reduce((a, m) => a + Math.abs(m.delta), 0) / Math.min(60, M.length) || 1;
+  return clamp(sum / (mag * 8), -1, 1);
+}
+function bookScore() {
+  const { bid, ask } = S.book;
+  if (!bid && !ask) return 0;
+  return clamp((bid - ask) / (bid + ask) * 2.5, -1, 1);
+}
+function printsScore() {
+  const tot = S.prints.reduce((a, p) => a + p.notional, 0);
+  return tot ? clamp(S.printsNet / tot * 1.5, -1, 1) : 0;
+}
+/* Composite whale score for a symbol. Live components only exist for the active
+   symbol; every symbol always has the real kline taker-delta component. */
+function whaleScoreFor(sym) {
+  const delta = S.klineDelta[sym] || 0;
+  if (sym !== S.active) return Math.round(delta * 100);
+  const parts = { cvd: cvdSlopeScore(), book: bookScore(), delta, prints: printsScore() };
+  S.whale.parts = parts;
+  const score = Math.round((parts.cvd * 0.35 + parts.book * 0.2 + parts.delta * 0.3 + parts.prints * 0.15) * 100);
+  S.whale.score = score;
+  return score;
+}
+
+/* ------------------------- on-chain feed (SIM/real) ---------------------- */
+const SIM_COINS = ["BTC", "ETH", "SOL", "XRP", "USDT"];
+const SIM_EX = ["binance", "coinbase", "kraken", "okx", "bybit"];
+function simTransfer() {
+  const coin = SIM_COINS[Math.floor(Math.random() * SIM_COINS.length)];
+  const usd = Math.round(Math.exp(13.5 + Math.random() * 2.6));   // ~$0.7M–$70M lognormal-ish
+  const toEx = Math.random() < 0.5;
+  const ex = SIM_EX[Math.floor(Math.random() * SIM_EX.length)];
+  pushChain({ t: Date.now(), coin, usd, toEx, ex, sim: true });
+  S.timers.sim = setTimeout(simTransfer, CFG.sim.minGapMs + Math.random() * (CFG.sim.maxGapMs - CFG.sim.minGapMs));
+}
+function pushChain(item) {
+  S.chain.items.unshift(item);
+  if (S.chain.items.length > 30) S.chain.items.pop();
+  S.chain.net += item.toEx ? item.usd : -item.usd;
+  renderChain();
+}
+async function whaleAlertPoll() {
+  const key = $("waKey").value.trim();
+  if (!key) return;
+  try {
+    const start = Math.floor(Date.now() / 1000) - 300;
+    const r = await fetch(`https://api.whale-alert.io/v1/transactions?api_key=${key}&min_value=1000000&start=${start}`);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    if (j.result !== "success") throw new Error(j.message || "API error");
+    clearTimeout(S.timers.sim);
+    if (!S.chain.real) { S.chain.items = []; S.chain.net = 0; }
+    S.chain.real = true;
+    $("chainBadge").textContent = "REAL"; $("chainBadge").className = "badge real";
+    $("waStatus").className = "note ok mt-2"; $("waStatus").textContent = "Whale Alert connected — polling every 60s.";
+    $("waStatus").classList.remove("hidden");
+    for (const tx of (j.transactions || []).slice(-10)) {
+      const toEx = (tx.to && tx.to.owner_type === "exchange");
+      const fromEx = (tx.from && tx.from.owner_type === "exchange");
+      if (!toEx && !fromEx) continue;
+      pushChain({ t: tx.timestamp * 1000, coin: (tx.symbol || "?").toUpperCase(),
+                  usd: Math.round(tx.amount_usd || 0), toEx, ex: (toEx ? tx.to.owner : tx.from.owner) || "exchange", sim: false });
+    }
+    S.timers.wa = setTimeout(whaleAlertPoll, 60000);
+  } catch (e) {
+    $("waStatus").className = "note err mt-2";
+    $("waStatus").textContent = "Whale Alert failed: " + e.message +
+      " (browser CORS or plan limits can block this — feed stays simulated).";
+    $("waStatus").classList.remove("hidden");
+    if (!S.chain.real && !S.timers.sim) simTransfer();
+  }
+}
+
+/* ============================== INDICATORS =============================== */
+function atr(cs, period = 14) {
+  const tr = [];
+  for (let i = 1; i < cs.length; i++)
+    tr.push(Math.max(cs[i].h - cs[i].l, Math.abs(cs[i].h - cs[i - 1].c), Math.abs(cs[i].l - cs[i - 1].c)));
+  const s = tr.slice(-period);
+  return s.reduce((a, b) => a + b, 0) / (s.length || 1);
+}
+function emaSeries(vals, period) {
+  const k = 2 / (period + 1), out = [];
+  let e = vals[0];
+  for (let i = 0; i < vals.length; i++) { e = i ? vals[i] * k + e * (1 - k) : vals[0]; out.push(e); }
+  return out;
+}
+function macdSeries(closes) {
+  const e12 = emaSeries(closes, 12), e26 = emaSeries(closes, 26);
+  const macd = closes.map((_, i) => e12[i] - e26[i]);
+  const sig = emaSeries(macd, 9);
+  return { macd, sig, hist: macd.map((m, i) => m - sig[i]) };
+}
+function swings(cs, k) {
+  const sh = [], sl = [];
+  for (let i = k; i < cs.length - k; i++) {
+    const win = cs.slice(i - k, i + k + 1);
+    const hs = win.map(x => x.h), ls = win.map(x => x.l);
+    if (cs[i].h === Math.max(...hs) && hs.filter(x => x === cs[i].h).length === 1) sh.push({ i, p: cs[i].h });
+    if (cs[i].l === Math.min(...ls) && ls.filter(x => x === cs[i].l).length === 1) sl.push({ i, p: cs[i].l });
+  }
+  return { sh, sl };
+}
+function tfBias(cs) {
+  const { sh, sl } = swings(cs, CFG.s1.swingK);
+  if (sh.length < 2 || sl.length < 2) return "RANGE";
+  const close = cs[cs.length - 1].c;
+  const hh = sh[sh.length - 1].p > sh[sh.length - 2].p;
+  const hl = sl[sl.length - 1].p > sl[sl.length - 2].p;
+  if (hh && hl) return close < sl[sl.length - 1].p ? "RANGE" : "BULL";
+  if (!hh && !hl) return close > sh[sh.length - 1].p ? "RANGE" : "BEAR";
+  if (close > sh[sh.length - 1].p) return "BULL";
+  if (close < sl[sl.length - 1].p) return "BEAR";
+  return "RANGE";
+}
+
+/* ================== STRATEGY 1 — SMC / POI execution ===================== */
+function detectFVG(cs, tf, a) {
+  const out = [], gap = CFG.s1.fvgMinAtr * a;
+  for (let i = 2; i < cs.length; i++) {
+    if (cs[i].l - cs[i - 2].h >= gap) out.push({ type: "FVG", dir: "BULL", top: cs[i].l, bottom: cs[i - 2].h, idx: i, tf });
+    if (cs[i - 2].l - cs[i].h >= gap) out.push({ type: "FVG", dir: "BEAR", top: cs[i - 2].l, bottom: cs[i].h, idx: i, tf });
+  }
+  return out;
+}
+function detectIFVG(fvgs, cs) {
+  const out = [];
+  for (const z of fvgs) {
+    const after = cs.slice(z.idx + 1);
+    if (!after.length) continue;
+    if (z.dir === "BEAR" && Math.max(...after.map(x => x.c)) > z.top) out.push({ ...z, type: "IFVG", dir: "BULL" });
+    else if (z.dir === "BULL" && Math.min(...after.map(x => x.c)) < z.bottom) out.push({ ...z, type: "IFVG", dir: "BEAR" });
+  }
+  return out;
+}
+function detectOB(cs, tf, a) {
+  const out = [], minBody = CFG.s1.obDispAtr * a;
+  for (let i = 1; i < cs.length - 1; i++) {
+    const n = cs[i + 1], body = Math.abs(n.c - n.o);
+    if (body < minBody) continue;
+    if (n.c > n.o && cs[i].c < cs[i].o) out.push({ type: "OB", dir: "BULL", top: cs[i].h, bottom: cs[i].l, idx: i, tf });
+    else if (n.c < n.o && cs[i].c > cs[i].o) out.push({ type: "OB", dir: "BEAR", top: cs[i].h, bottom: cs[i].l, idx: i, tf });
+  }
+  return out;
+}
+function isFresh(z, cs) {
+  const after = cs.slice(z.idx + 1);
+  if (cs.length - 1 - z.idx > CFG.s1.poiMaxAge) return false;
+  if (!after.length) return true;
+  const lo = Math.min(...after.map(x => x.l)), hi = Math.max(...after.map(x => x.h));
+  if (z.dir === "BULL" && lo <= z.top) return false;
+  if (z.dir === "BEAR" && hi >= z.bottom) return false;
+  return true;
+}
+function s1Analyze(sym) {
+  const { h4, h1, m15, m5 } = S.candles[sym];
+  const b4 = tfBias(h4), b1 = tfBias(h1);
+  const bias = (b4 === b1 && b4 !== "RANGE") ? b4 : "RANGE";
+  const rng = m15.slice(-CFG.s1.eqLookback);
+  const rHi = Math.max(...rng.map(x => x.h)), rLo = Math.min(...rng.map(x => x.l));
+  const eq = (rHi + rLo) / 2, rangeSize = rHi - rLo || 1;
+  const price = m5[m5.length - 1].c;
+  let zones = [];
+  for (const [cs, tf] of [[m15, "M15"], [m5, "M5"]]) {
+    const a = atr(cs);
+    const fv = detectFVG(cs, tf, a);
+    zones = zones.concat([...fv, ...detectIFVG(fv, cs), ...detectOB(cs, tf, a)]
+      .filter(z => isFresh(z, cs)).map(z => ({ ...z, barsAgo: cs.length - 1 - z.idx })));
+  }
+  const cands = [];
+  if (bias !== "RANGE") {
+    for (const z of zones) {
+      const mid = (z.top + z.bottom) / 2;
+      if (z.dir !== bias) continue;
+      if (bias === "BULL" && mid > eq) continue;   // longs only in discount
+      if (bias === "BEAR" && mid < eq) continue;   // shorts only in premium
+      const freshness = 1 - Math.min(1, z.barsAgo / CFG.s1.poiMaxAge);
+      const depth = Math.abs(mid - eq) / rangeSize;
+      z.score = CFG.s1.typeWeight[z.type] + freshness * 0.5 + depth * 0.5;
+      cands.push(z);
+    }
+    cands.sort((a, b) => b.score - a.score);
+  }
+  return { b4, b1, bias, eq, rHi, rLo, price, cands, atr5: atr(m5) };
+}
+function s1Signal(sym) {
+  const r = s1Analyze(sym);
+  S.lastAnalysis[sym] = r;
+  if (r.bias === "RANGE" || !r.cands.length) return null;
+  const z = r.cands[0], buf = CFG.s1.slBufAtr * r.atr5;
+  let entry, sl, tp, side;
+  if (z.dir === "BULL") { entry = z.top; sl = z.bottom - buf; tp = entry + CFG.s1.rr * (entry - sl); side = "LONG"; }
+  else { entry = z.bottom; sl = z.top + buf; tp = entry - CFG.s1.rr * (sl - entry); side = "SHORT"; }
+  if (!(Math.abs(entry - sl) > 0)) return null;
+  return { strat: "S1", sym, side, entry, sl, tp, rr: CFG.s1.rr, tf: z.tf,
+    reason: `${z.type} ${z.tf} in ${side === "LONG" ? "discount" : "premium"} · bias 4h+1h ${r.bias} · SL behind POI`,
+    conditional: "valid only on a 1m CHoCH/displacement inside the zone; a close through the far side kills it" };
+}
+
+/* ============ STRATEGY 2 — Liquidity & volatility breakout =============== */
+function dayLevels(h1) {
+  const byDay = {};
+  for (const k of h1) {
+    const day = Math.floor(k.t / 86400) * 86400;
+    (byDay[day] = byDay[day] || []).push(k);
+  }
+  const days = Object.keys(byDay).map(Number).sort((a, b) => a - b);
+  if (days.length < 2) return null;
+  const prev = byDay[days[days.length - 2]];
+  return { pdh: Math.max(...prev.map(k => k.h)), pdl: Math.min(...prev.map(k => k.l)) };
+}
+function sessionLevels(m15) {
+  const now = new Date(), h = now.getUTCHours();
+  const out = [];
+  for (const s of SESSIONS) {
+    if (!(h >= s.h0 && h < s.h1)) continue;
+    const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), s.h0) / 1000;
+    const bars = m15.filter(k => k.t >= start);
+    if (bars.length < 4) continue;
+    out.push({ name: s.name, hi: Math.max(...bars.map(k => k.h)), lo: Math.min(...bars.map(k => k.l)) });
+  }
+  return out;
+}
+function s2Signal(sym) {
+  const { h1, m15 } = S.candles[sym];
+  if (m15.length < 40) return null;
+  const a = atr(m15), c = CFG.s2;
+  const last = m15[m15.length - 1], prevBars = m15.slice(-21, -1);
+  const avgVol = prevBars.reduce((x, k) => x + k.v, 0) / prevBars.length || 1;
+  const volOk = last.v >= c.volMult * avgVol;
+  const dl = dayLevels(h1);
+  const levels = [];
+  if (dl) { levels.push({ name: "PDH", p: dl.pdh, kind: "high" }, { name: "PDL", p: dl.pdl, kind: "low" }); }
+  for (const s of sessionLevels(m15.slice(0, -1)))
+    levels.push({ name: s.name + " high", p: s.hi, kind: "high" }, { name: s.name + " low", p: s.lo, kind: "low" });
+  const before = m15.slice(-1 - c.sweepLookback, -1);
+
+  for (const L of levels) {
+    if (L.kind === "high") {
+      // failed sweep above a high → Turtle Soup SHORT
+      if (last.h > L.p && last.c < L.p && before.every(k => k.h <= L.p)) {
+        const sl = last.h + 0.25 * a, entry = last.c, dist = sl - entry;
+        if (dist > 0) return { strat: "S2", sym, side: "SHORT", entry, sl, tp: entry - c.rrSoup * dist,
+          rr: c.rrSoup, tf: "M15", trailAtr: a,
+          reason: `Turtle Soup — swept ${L.name} (${fmt(L.p, digitsFor(L.p))}) and closed back under`,
+          conditional: "fade of a failed liquidity grab; exit if price reclaims the swept level" };
+      }
+      // volume-supported breakout above a high → LONG
+      if (volOk && last.c > L.p && before.every(k => k.c <= L.p)) {
+        const sl = last.c - c.atrSL * a, entry = last.c;
+        return { strat: "S2", sym, side: "LONG", entry, sl, tp: entry + c.rrBreak * (entry - sl),
+          rr: c.rrBreak, tf: "M15", trailAtr: a,
+          reason: `Breakout above ${L.name} on ${(last.v / avgVol).toFixed(1)}× volume`,
+          conditional: `ATR trail: raise SL to close − ${c.atrSL}×ATR(14) each 15m close (execution uses Binance trailing stop)` };
+      }
+    } else {
+      if (last.l < L.p && last.c > L.p && before.every(k => k.l >= L.p)) {
+        const sl = last.l - 0.25 * a, entry = last.c, dist = entry - sl;
+        if (dist > 0) return { strat: "S2", sym, side: "LONG", entry, sl, tp: entry + c.rrSoup * dist,
+          rr: c.rrSoup, tf: "M15", trailAtr: a,
+          reason: `Turtle Soup — swept ${L.name} (${fmt(L.p, digitsFor(L.p))}) and closed back above`,
+          conditional: "fade of a failed liquidity grab; exit if price loses the swept level again" };
+      }
+      if (volOk && last.c < L.p && before.every(k => k.c >= L.p)) {
+        const sl = last.c + c.atrSL * a, entry = last.c;
+        return { strat: "S2", sym, side: "SHORT", entry, sl, tp: entry - c.rrBreak * (sl - entry),
+          rr: c.rrBreak, tf: "M15", trailAtr: a,
+          reason: `Breakdown below ${L.name} on ${(last.v / avgVol).toFixed(1)}× volume`,
+          conditional: `ATR trail: lower SL to close + ${c.atrSL}×ATR(14) each 15m close (execution uses Binance trailing stop)` };
+      }
+    }
+  }
+  return null;
+}
+
+/* ========= STRATEGY 3 — Trend-following momentum cross (1h) ============== */
+function s3Signal(sym) {
+  const { h1 } = S.candles[sym];
+  if (h1.length < 210) return null;
+  const closes = h1.map(k => k.c);
+  const e20 = emaSeries(closes, 20), e50 = emaSeries(closes, 50), e200 = emaSeries(closes, 200);
+  const { hist } = macdSeries(closes);
+  const i = closes.length - 1, k = h1[i], a = atr(h1);
+  const stackBull = e20[i] > e50[i] && e50[i] > e200[i];
+  const stackBear = e20[i] < e50[i] && e50[i] < e200[i];
+  const histRising = hist[i] > hist[i - 1];
+  const c = CFG.s3;
+  if (stackBull && hist[i] > 0 && histRising && k.l <= e20[i] && k.c > e20[i]) {
+    const entry = k.c, sl = Math.min(e50[i], k.l) - c.slBufAtr * a, dist = entry - sl;
+    if (dist > 0) return { strat: "S3", sym, side: "LONG", entry, sl, tp: entry + c.rr * dist, rr: c.rr, tf: "H1",
+      reason: "EMA 20>50>200 stack · MACD hist positive & rising · pullback tagged EMA20 and reclaimed",
+      conditional: "trend trade — invalid if 1h closes below EMA50" };
+  }
+  if (stackBear && hist[i] < 0 && !histRising && k.h >= e20[i] && k.c < e20[i]) {
+    const entry = k.c, sl = Math.max(e50[i], k.h) + c.slBufAtr * a, dist = sl - entry;
+    if (dist > 0) return { strat: "S3", sym, side: "SHORT", entry, sl, tp: entry - c.rr * dist, rr: c.rr, tf: "H1",
+      reason: "EMA 20<50<200 stack · MACD hist negative & falling · pullback tagged EMA20 and rejected",
+      conditional: "trend trade — invalid if 1h closes above EMA50" };
+  }
+  return null;
+}
+
+/* ===================== SIGNAL MANAGER + CONFLUENCE ======================= */
+
+const TELEGRAM_BOT_TOKEN = "8275564296:AAGpYGfalrxPBa-vonyAjQyiYZwQa9joHT4"; // Put YOUR actual token here
+const TELEGRAM_CHAT_ID = "5274863559";                         // Put YOUR actual chat ID here
+
+function sendTelegramMessage(sig) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+
+  const f = S.filters[sig.sym] || { tickD: 2 };
+  const d = Math.max(f.tickD, 2);
+
+  // Format the message with Markdown
+  const text = `🚨 *Confirmed Signal: ${sig.sym}* 🚨\n` +
+               `*Strategy:* ${sig.strat}\n` +
+               `*Side:* ${sig.side === 'LONG' ? '🟢 LONG' : '🔴 SHORT'}\n` +
+               `*Entry:* ${fmt(sig.entry, d)}\n` +
+               `*SL:* ${fmt(sig.sl, d)}\n` +
+               `*TP:* ${fmt(sig.tp, d)}\n` +
+               `*Reason:* ${sig.reason}`;
+
+  // Construct the correct URL, ensuring "bot" precedes the token
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+  // Send the request
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: text,
+      parse_mode: 'Markdown'
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      console.error("Telegram API Error:", response.status);
+    }
+  })
+  .catch(err => console.error("Telegram network request failed:", err));
+}
+
+function runStrategies(sym) {
+  if (!S.candles[sym]) return;
+  for (const fn of [s1Signal, s2Signal, s3Signal]) {
+    let sig = null;
+    try { sig = fn(sym); } catch (e) { console.warn(fn.name, sym, e); }
+    if (sig) admitSignal(sig);
+  }
+}
+
+function admitSignal(sig) {
+  const f = S.filters[sig.sym] || { tickD: 2 };
+  const id = `${sig.strat}|${sig.sym}|${sig.side}|${(+sig.entry).toFixed(f.tickD)}`;
+  const dup = S.signals.find(s => s.id === id && Date.now() - s.ts < CFG.sigCooldownMs);
+  if (dup) return;
+  
+  const score = whaleScoreFor(sig.sym);
+  const dirOk = (sig.side === "LONG" && score > 0) || (sig.side === "SHORT" && score < 0);
+  
+  sig.id = id; 
+  sig.ts = Date.now(); 
+  sig.whale = score;
+  sig.validated = dirOk && Math.abs(score) >= CFG.gateThreshold;
+  
+  S.signals.unshift(sig);
+  if (S.signals.length > CFG.maxSignals) S.signals.pop();
+  
+  renderSignals();
+  if (sig.sym === S.active) renderMarkers();
+
+  // If the signal is validated by the whale score, send it to Telegram
+  if (sig.validated) {
+    sendTelegramMessage(sig);
+  }
+}
+
+/* ============================ RISK FRAMEWORK ============================= */
+function riskInputs() {
+  const account = Math.max(0, +$("account").value || 0);
+  let riskPct = clamp(+$("risk").value || 1, 0.1, 2);   // hard cap 2%
+  $("risk").value = riskPct;
+  const maxPos = clamp(Math.round(+$("maxpos").value || 3), 1, 10);
+  $("maxpos").value = maxPos;
+  return { account, riskPct: riskPct / 100, maxPos };
+}
+function sizeFor(entry, sl) {
+  const { account, riskPct } = riskInputs();
+  const dist = Math.abs(entry - sl);
+  if (!(dist > 0)) return null;
+  const riskAmt = account * riskPct;
+  return { riskAmt, units: riskAmt / dist, notional: (riskAmt / dist) * entry, dist };
+}
+function renderCalc() {
+  const e = +$("calcEntry").value, s = +$("calcStop").value;
+  const r = (e && s && e !== s) ? sizeFor(e, s) : null;
+  $("calcRisk").textContent = r ? "$" + fmt(r.riskAmt, 2) : "—";
+  $("calcSize").textContent = r ? fmt(r.units, r.units < 10 ? 4 : 2) + " units" : "—";
+  $("calcNotional").textContent = r ? "$" + fmt(r.notional, 0) : "—";
+}
+
+/* ========================= EXECUTION (Binance) =========================== */
+async function hmacHex(secret, msg) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(msg));
+  return [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+async function signed(method, path, params) {
+  const p = { ...params, timestamp: Date.now() + T.offset, recvWindow: 10000 };
+  const qs = new URLSearchParams(p).toString();
+  const sig = await hmacHex(T.secret, qs);
+  const r = await fetch(`${BASES[T.env]}${path}?${qs}&signature=${sig}`, { method, headers: { "X-MBX-APIKEY": T.key } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`Binance ${r.status}: ${j.msg || JSON.stringify(j)}`);
+  return j;
+}
+function tstatus(msg, cls) {
+  const el = $("tstatus");
+  el.className = "note mt-3 " + (cls || "");
+  el.innerHTML = msg; el.classList.remove("hidden");
+}
+function connBadge(show) {
+  const cb = $("connbadge");
+  if (!show) { cb.className = "badge hidden"; cb.textContent = ""; return; }
+  cb.textContent = T.env === "test" ? "connected · testnet" : "connected · LIVE";
+  cb.className = "badge " + (T.env === "test" ? "test" : "live");
+}
+async function openPositions() {
+  const pr = await signed("GET", "/fapi/v2/positionRisk", {});
+  return pr.filter(p => Math.abs(+p.positionAmt) > 0);
+}
+async function refreshPosCount() {
+  if (!T.connected) { $("openPosCount").textContent = ""; return 0; }
+  try {
+    const open = await openPositions();
+    const { maxPos } = riskInputs();
+    $("openPosCount").textContent = `open positions: ${open.length}/${maxPos}`;
+    return open.length;
+  } catch (e) { return 0; }
+}
+async function connectBinance() {
+  T.env = $("env").value; T.key = $("bkey").value.trim(); T.secret = $("bsecret").value.trim();
+  T.connected = false; connBadge(false);
+  if (!T.key || !T.secret) throw new Error("Enter API key and secret." + (T.env === "test" ? " Testnet keys: testnet.binancefuture.com" : ""));
+  const tr = await fetch(BASES[T.env] + "/fapi/v1/time");
+  if (!tr.ok) throw new Error(`Cannot reach ${T.env === "test" ? "testnet" : "Binance"} (${tr.status}).`);
+  T.offset = (await tr.json()).serverTime - Date.now();
+  const bal = await signed("GET", "/fapi/v2/balance", {});
+  T.avail = +((bal.find(b => b.asset === "USDT") || {}).availableBalance || 0);
+  T.connected = true; connBadge(true);
+  await refreshPosCount();
+  tstatus(`${T.env === "test" ? '<span class="badge test">TESTNET</span>' : '<span class="badge live">LIVE — REAL MONEY</span>'}
+    connected · USDT available: <b>${fmt(T.avail, 2)}</b>. Execute buttons in the signal stream are now armed.`,
+    T.env === "test" ? "ok" : "warn");
+  renderSignals();
+}
+const roundTick = (v, f) => (Math.round(v / f.tick) * f.tick).toFixed(f.tickD);
+const floorStep = (v, f) => (Math.floor(v / f.step + 1e-9) * f.step).toFixed(f.stepD);
+
+async function executeSignal(sig) {
+  if (!T.connected) throw new Error("Connect to Binance first (Trade execution section).");
+  const f = S.filters[sig.sym];
+  if (!f) throw new Error(`No exchange filters for ${sig.sym}.`);
+  const { maxPos } = riskInputs();
+  const openN = await refreshPosCount();
+  if (openN >= maxPos) throw new Error(`Max concurrent positions reached (${openN}/${maxPos}). Close something or raise the limit.`);
+  const sz = sizeFor(sig.entry, sig.sl);
+  if (!sz) throw new Error("Cannot size: zero stop distance.");
+  const lev = clamp(Math.round(+$("lev").value || 1), 1, 20);
+  $("lev").value = lev;
+  const entry = roundTick(sig.entry, f), sl = roundTick(sig.sl, f), tp = roundTick(sig.tp, f);
+  const qty = floorStep(sz.units, f);
+  if (+qty <= 0 || +qty < f.minQty) throw new Error(`Size ${sz.units.toFixed(8)} rounds below min lot ${f.minQty}. Raise account or risk %.`);
+  const notional = +qty * +entry;
+  if (f.minNotional && notional < f.minNotional) throw new Error(`Notional ${notional.toFixed(2)} under exchange minimum ${f.minNotional}.`);
+  const bal = await signed("GET", "/fapi/v2/balance", {});
+  T.avail = +((bal.find(b => b.asset === "USDT") || {}).availableBalance || 0);
+  const margin = notional / lev;
+  if (margin > T.avail) throw new Error(`Needs ~${margin.toFixed(2)} USDT margin at ${lev}x, only ${T.avail.toFixed(2)} available.`);
+
+  const side = sig.side === "LONG" ? "BUY" : "SELL", xside = sig.side === "LONG" ? "SELL" : "BUY";
+  const useTrail = sig.strat === "S2" && sig.trailAtr;
+  const cbRate = useTrail ? clamp(+(100 * CFG.s2.atrSL * sig.trailAtr / sig.entry).toFixed(1), 0.1, 5) : 0;
+  const head = T.env === "live" ? "*** LIVE ORDERS — REAL MONEY ***\n\n" : "Testnet (paper money)\n\n";
+  const exitLine = useTrail
+    ? `3) TRAILING_STOP_MARKET ${xside} callback ${cbRate}% (≈${CFG.s2.atrSL}×ATR)`
+    : `3) TAKE_PROFIT_MARKET ${xside} (close position) @ ${tp}`;
+  const msg = head + `${sig.strat} · ${sig.sym} ${sig.side} @ ${lev}x\n\n` +
+    `1) LIMIT ${side} qty ${qty} @ ${entry}\n` +
+    `2) STOP_MARKET ${xside} (close position) @ ${sl}\n` + exitLine +
+    `\n\nRisk $${sz.riskAmt.toFixed(2)} (${(riskInputs().riskPct * 100).toFixed(1)}%) · notional ≈ ${notional.toFixed(2)} USDT · margin ≈ ${margin.toFixed(2)} USDT.\n\nSend these 3 orders?`;
+  if (!confirm(msg)) return { cancelled: true };
+  if (T.env === "live" && !confirm("Final check: this is the LIVE account. Proceed?")) return { cancelled: true };
+
+  await signed("POST", "/fapi/v1/leverage", { symbol: sig.sym, leverage: lev });
+  const o1 = await signed("POST", "/fapi/v1/order", { symbol: sig.sym, side, type: "LIMIT", timeInForce: "GTC", quantity: qty, price: entry });
+  const o2 = await signed("POST", "/fapi/v1/order", { symbol: sig.sym, side: xside, type: "STOP_MARKET", closePosition: "true", stopPrice: sl, workingType: "CONTRACT_PRICE" });
+  let o3;
+  if (useTrail)
+    o3 = await signed("POST", "/fapi/v1/order", { symbol: sig.sym, side: xside, type: "TRAILING_STOP_MARKET", quantity: qty, callbackRate: cbRate, workingType: "CONTRACT_PRICE", reduceOnly: "true" });
+  else
+    o3 = await signed("POST", "/fapi/v1/order", { symbol: sig.sym, side: xside, type: "TAKE_PROFIT_MARKET", closePosition: "true", stopPrice: tp, workingType: "CONTRACT_PRICE" });
+  refreshPosCount();
+  return { entry: o1.orderId, sl: o2.orderId, tp: o3.orderId, trail: useTrail };
+}
+
+/* ================================ CHARTS ================================= */
+const charts = { main: null, cvd: null, candle: null, e20: null, e50: null, e200: null,
+                 cvdHist: null, cvdLine: null, priceLines: [] };
+const CHART_OPTS = {
+  autoSize: true,
+  layout: { background: { type: "solid", color: "transparent" }, textColor: "#8b93a7", fontSize: 11 },
+  grid: { vertLines: { color: "rgba(255,255,255,.04)" }, horzLines: { color: "rgba(255,255,255,.04)" } },
+  timeScale: { timeVisible: true, secondsVisible: false, borderColor: "rgba(255,255,255,.08)" },
+  rightPriceScale: { borderColor: "rgba(255,255,255,.08)" },
+  crosshair: { mode: 0 },
+};
+function initCharts() {
+  charts.main = LightweightCharts.createChart($("chartMain"), CHART_OPTS);
+  charts.candle = charts.main.addCandlestickSeries({
+    upColor: "#3ddc84", downColor: "#ff6b5e", borderVisible: false,
+    wickUpColor: "rgba(61,220,132,.6)", wickDownColor: "rgba(255,107,94,.6)" });
+  const lineOpts = c => ({ color: c, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+  charts.e20 = charts.main.addLineSeries(lineOpts("#5b8cff"));
+  charts.e50 = charts.main.addLineSeries(lineOpts("#e8c07a"));
+  charts.e200 = charts.main.addLineSeries(lineOpts("#d9a6ff"));
+  charts.cvd = LightweightCharts.createChart($("chartCVD"), CHART_OPTS);
+  charts.cvdHist = charts.cvd.addHistogramSeries({ priceFormat: { type: "volume" }, priceLineVisible: false, lastValueVisible: false });
+  charts.cvdLine = charts.cvd.addLineSeries({ color: "#5b8cff", lineWidth: 2, priceLineVisible: false });
+}
+function clearPriceLines() {
+  for (const pl of charts.priceLines) { try { charts.candle.removePriceLine(pl); } catch (e) {} }
+  charts.priceLines = [];
+}
+function addPL(price, color, title, style) {
+  charts.priceLines.push(charts.candle.createPriceLine({
+    price, color, lineWidth: 1, lineStyle: style ?? 2, axisLabelVisible: false, title }));
+}
+function renderActive() {
+  const sym = S.active, C = S.candles[sym];
+  if (!C || !charts.candle) return;
+  const m15 = C.m15;
+  charts.candle.setData(m15.map(k => ({ time: k.t, open: k.o, high: k.h, low: k.l, close: k.c })));
+  const closes = m15.map(k => k.c);
+  const mk = (arr, p) => emaSeries(arr, p).map((v, i) => ({ time: m15[i].t, value: v }));
+  charts.e20.setData(mk(closes, 20)); charts.e50.setData(mk(closes, 50)); charts.e200.setData(mk(closes, 200));
+
+  clearPriceLines();
+  const r = S.lastAnalysis[sym];
+  if (r) {
+    addPL(r.eq, "rgba(232,192,122,.8)", "eq");
+    for (const z of r.cands.slice(0, 3)) {
+      const col = z.dir === "BULL" ? "rgba(61,220,132,.55)" : "rgba(255,107,94,.55)";
+      addPL(z.top, col, `${z.type} ${z.tf} top`); addPL(z.bottom, col, `${z.type} ${z.tf} btm`);
+    }
+  }
+  const dl = dayLevels(C.h1);
+  if (dl) { addPL(dl.pdh, "rgba(139,147,167,.7)", "PDH", 0); addPL(dl.pdl, "rgba(139,147,167,.7)", "PDL", 0); }
+  renderMarkers();
+  renderBiasRow();
+  renderPriceHead();
+}
+function renderMarkers() {
+  if (!charts.candle || !S.candles[S.active]) return;
+  const m15c = S.candles[S.active].m15;
+  const first = m15c[0].t, lastT = m15c[m15c.length - 1].t;
+  const marks = S.signals.filter(s => s.sym === S.active && s.ts / 1000 >= first)
+    .map(s => ({
+      time: Math.min(Math.floor(s.ts / 900000) * 900, lastT),  // clamp to last closed bar
+      position: s.side === "LONG" ? "belowBar" : "aboveBar",
+      shape: s.side === "LONG" ? "arrowUp" : "arrowDown",
+      color: s.side === "LONG" ? "#3ddc84" : "#ff6b5e",
+      text: s.strat + (s.validated ? "✓" : ""),
+    }))
+    .sort((a, b) => a.time - b.time);
+  const dedup = [];
+  for (const m of marks) if (!dedup.some(x => x.time === m.time && x.text === m.text)) dedup.push(m);
+  charts.candle.setMarkers(dedup);
+}
+function renderCVDChart() {
+  if (!charts.cvdHist) return;
+  const M = S.cvd.minutes;
+  charts.cvdHist.setData(M.map(m => ({ time: m.t / 1000, value: m.delta,
+    color: m.delta >= 0 ? "rgba(61,220,132,.5)" : "rgba(255,107,94,.5)" })));
+  let cum = 0;
+  charts.cvdLine.setData(M.map(m => { cum += m.delta; return { time: m.t / 1000, value: cum }; }));
+}
+
+/* =============================== RENDERING =============================== */
+function renderWatch() {
+  $("watchlist").innerHTML = S.watch.map(sym => {
+    const t = S.tickers[sym];
+    const px = t ? fmt(t.last, digitsFor(t.last)) : "—";
+    const pc = t ? (t.pct >= 0 ? "+" : "") + t.pct.toFixed(2) + "%" : "";
+    return `<div class="chip ${sym === S.active ? "active" : ""}" data-sym="${sym}">
+      <b>${sym.replace("USDT", "")}</b>
+      <span class="mono text-slate-400" id="chip-p-${sym}">${px}</span>
+      <span class="mono ${t && t.pct < 0 ? "bear" : "bull"}" id="chip-c-${sym}">${pc}</span>
+      <span class="x" data-x="${sym}">×</span></div>`;
+  }).join("");
+}
+function renderWatchChip(sym) {
+  const t = S.tickers[sym], p = $("chip-p-" + sym), c = $("chip-c-" + sym);
+  if (!t || !p) return;
+  p.textContent = fmt(t.last, digitsFor(t.last));
+  c.textContent = (t.pct >= 0 ? "+" : "") + t.pct.toFixed(2) + "%";
+  c.className = "mono " + (t.pct < 0 ? "bear" : "bull");
+}
+function renderPriceHead() {
+  $("activeSym").textContent = S.active;
+  const t = S.tickers[S.active];
+  if (t) {
+    $("activePrice").textContent = fmt(t.last, digitsFor(t.last));
+    $("activeChange").textContent = (t.pct >= 0 ? "+" : "") + t.pct.toFixed(2) + "% 24h";
+    $("activeChange").className = "mono text-sm " + (t.pct < 0 ? "bear" : "bull");
+  }
+}
+const biasHtml = b => b === "BULL" ? '<span class="bull">Bullish</span>'
+  : b === "BEAR" ? '<span class="bear">Bearish</span>' : '<span class="rangec">Range</span>';
+function renderBiasRow() {
+  const r = S.lastAnalysis[S.active];
+  if (!r) { $("biasRow").innerHTML = ""; return; }
+  const h = new Date().getUTCHours();
+  const sess = SESSIONS.filter(s => h >= s.h0 && h < s.h1).map(s => s.name).join("+") || "off-hours";
+  const d = digitsFor(r.price);
+  $("biasRow").innerHTML = `
+    <span><span class="lbl">4h</span> ${biasHtml(r.b4)}</span>
+    <span><span class="lbl">1h</span> ${biasHtml(r.b1)}</span>
+    <span><span class="lbl">Combined</span> ${biasHtml(r.bias)}</span>
+    <span><span class="lbl">Equilibrium</span> <span class="mono">${fmt(r.eq, d)}</span>
+      <span class="text-slate-500">(${r.price < r.eq ? "discount" : "premium"})</span></span>
+    <span><span class="lbl">Fresh POIs</span> <span class="mono">${r.cands.length}</span></span>
+    <span><span class="lbl">Session</span> ${sess} UTC</span>`;
+}
+function renderSignals() {
+  const gate = $("gateChk").checked;
+  const sigs = S.signals;
+  $("sigCount").textContent = sigs.length ? `${sigs.length} · ${sigs.filter(s => s.validated).length} whale-validated` : "";
+  $("sigEmpty").style.display = sigs.length ? "none" : "";
+  $("signalStream").innerHTML = sigs.slice(0, 20).map(s => {
+    const f = S.filters[s.sym] || { tickD: 2 };
+    const d = Math.max(f.tickD, 2);
+    const sz = sizeFor(s.entry, s.sl);
+    const blocked = gate && !s.validated;
+    return `<div class="sigcard ${s.validated ? "validated" : ""} ${blocked ? "opacity-60" : ""}">
+      <div class="flex flex-wrap items-center gap-2 mb-1">
+        <span class="badge ${s.strat.toLowerCase()}">${s.strat}</span>
+        <b class="text-sm">${s.sym}</b>
+        <span class="badge ${s.side === "LONG" ? "long" : "short"}">${s.side}</span>
+        <span class="badge ${s.validated ? "val" : "unval"}" title="whale confluence score">${s.validated ? "whale ✓" : "unconfirmed"} ${s.whale > 0 ? "+" : ""}${s.whale}</span>
+        <span class="ml-auto text-[10px] text-slate-500 mono">${new Date(s.ts).toLocaleTimeString("en-GB")}</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-xs mono my-2">
+        <div><span class="lbl">Entry</span><div>${fmt(s.entry, d)}</div></div>
+        <div><span class="lbl">SL</span><div class="bear">${fmt(s.sl, d)}</div></div>
+        <div><span class="lbl">TP (1:${s.rr})</span><div class="bull">${fmt(s.tp, d)}</div></div>
+      </div>
+      <div class="text-[11px] text-slate-400 leading-snug">${esc(s.reason)}</div>
+      <div class="text-[10px] text-slate-600 mt-1">${esc(s.conditional || "")}</div>
+      <div class="flex items-center gap-2 mt-2">
+        ${sz ? `<span class="text-[11px] text-slate-500 mono">size ${fmt(sz.units, sz.units < 10 ? 4 : 2)} · risk $${fmt(sz.riskAmt, 0)}</span>` : ""}
+        <span class="ml-auto"></span>
+        <button class="btn ghost sm" data-calc="${s.id}">→ calculator</button>
+        <button class="btn sm ${T.env === "live" ? "danger" : ""}" data-exec="${s.id}"
+          ${(!T.connected || blocked) ? "disabled" : ""}
+          title="${!T.connected ? "connect Binance first" : blocked ? "blocked by whale-confluence gate" : "send bracket orders"}">Execute</button>
+      </div>
+      <div id="ord-${cssId(s.id)}"></div>
+    </div>`;
+  }).join("");
+}
+const cssId = s => s.replace(/[^a-zA-Z0-9]/g, "_");
+function renderStratBoard() {
+  let html = `<tr><th>Pair</th><th>Bias</th><th>POIs</th><th>S3 stack</th><th>Whale</th></tr>`;
+  for (const sym of S.watch) {
+    const r = S.lastAnalysis[sym];
+    const C = S.candles[sym];
+    let stack = "—";
+    if (C && C.h1.length > 210) {
+      const cl = C.h1.map(k => k.c), i = cl.length - 1;
+      const e20 = emaSeries(cl, 20)[i], e50 = emaSeries(cl, 50)[i], e200 = emaSeries(cl, 200)[i];
+      stack = e20 > e50 && e50 > e200 ? '<span class="bull">bull</span>'
+            : e20 < e50 && e50 < e200 ? '<span class="bear">bear</span>' : '<span class="rangec">mixed</span>';
+    }
+    const w = whaleScoreFor(sym);
+    html += `<tr><td><b>${sym.replace("USDT", "")}</b></td>
+      <td>${r ? biasHtml(r.bias) : "—"}</td>
+      <td class="mono">${r ? r.cands.length : "—"}</td>
+      <td>${stack}</td>
+      <td class="mono ${w > 0 ? "bull" : w < 0 ? "bear" : ""}">${w > 0 ? "+" : ""}${w}</td></tr>`;
+  }
+  $("stratBoard").innerHTML = html;
+}
+function renderBook() {
+  const { bid, ask } = S.book, tot = bid + ask;
+  if (!tot) return;
+  $("bookBidBar").style.width = (bid / tot * 100).toFixed(1) + "%";
+  $("bookAskBar").style.width = (ask / tot * 100).toFixed(1) + "%";
+  $("bookBid").textContent = "bid $" + fmtUsd(bid);
+  $("bookAsk").textContent = "ask $" + fmtUsd(ask);
+  $("bookRatio").textContent = "imbalance " + ((bid - ask) / tot * 100).toFixed(1) + "%";
+  const now = Date.now();
+  const walls = Object.values(S.book.walls).filter(w => now - w.first > 60000);
+  const el = $("icebergNote");
+  if (walls.length) {
+    el.classList.remove("hidden");
+    el.innerHTML = "<b>Persistent wall" + (walls.length > 1 ? "s" : "") + ":</b> " + walls.slice(0, 3)
+      .map(w => `${w.side} $${fmtUsd(w.n)} @ ${fmt(w.p, digitsFor(w.p))}`).join(" · ") +
+      " — possible institutional resting size";
+  } else el.classList.add("hidden");
+}
+function renderPrints() {
+  $("printsNet").textContent = "net " + (S.printsNet >= 0 ? "+$" : "−$") + fmtUsd(Math.abs(S.printsNet));
+  $("printsNet").className = "ml-auto mono text-xs " + (S.printsNet >= 0 ? "bull" : "bear");
+  $("printsFeed").innerHTML = S.prints.slice(0, 25).map(p => `
+    <div><span class="text-slate-600 mono">${new Date(p.t).toLocaleTimeString("en-GB")}</span>
+    <span class="${p.side === "BUY" ? "bull" : "bear"} font-semibold">${p.side}</span>
+    <span class="mono">$${fmtUsd(p.notional)}</span>
+    <span class="text-slate-500 mono ml-auto">@${fmt(p.price, digitsFor(p.price))}</span></div>`).join("")
+    || `<div class="text-slate-600">waiting for prints ≥ $${fmtUsd(+$("printMin").value)}…</div>`;
+}
+function renderChain() {
+  $("chainFeed").innerHTML = S.chain.items.slice(0, 15).map(i => `
+    <div><span class="text-slate-600 mono">${new Date(i.t).toLocaleTimeString("en-GB")}</span>
+    <b>${esc(i.coin)}</b><span class="mono">$${fmtUsd(i.usd)}</span>
+    <span class="${i.toEx ? "bear" : "bull"}">${i.toEx ? "→ " : "← "}${esc(i.ex)}</span>
+    ${i.sim ? '<span class="badge sim ml-auto">SIM</span>' : '<span class="badge real ml-auto">REAL</span>'}</div>`).join("")
+    || `<div class="text-slate-600">waiting…</div>`;
+  const n = S.chain.net;
+  $("chainNet").textContent = (n >= 0 ? "+$" : "−$") + fmtUsd(Math.abs(n)) + (n >= 0 ? " into exchanges" : " off exchanges");
+  $("chainNet").className = "mono " + (n >= 0 ? "bear" : "bull");
+}
+function renderRadar() {
+  const cv = $("radar");
+  const dpr = devicePixelRatio || 1;
+  const w = cv.clientWidth; if (!w) return;
+  cv.width = w * dpr; cv.height = w * dpr;
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, w);
+  const cx = w / 2, cy = w / 2, R = w / 2 - 26;
+  const P = S.whale.parts;
+  const axes = [["CVD", P.cvd], ["BOOK", P.book], ["TAKER Δ", P.delta], ["PRINTS", P.prints]];
+  ctx.strokeStyle = "rgba(255,255,255,.08)"; ctx.fillStyle = "#596076";
+  ctx.font = "9px system-ui"; ctx.textAlign = "center";
+  for (const f of [0.33, 0.66, 1]) {
+    ctx.beginPath(); ctx.arc(cx, cy, R * f, 0, Math.PI * 2); ctx.stroke();
+  }
+  axes.forEach((a, i) => {
+    const ang = -Math.PI / 2 + i * Math.PI / 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R * Math.cos(ang), cy + R * Math.sin(ang)); ctx.stroke();
+    ctx.fillText(a[0], cx + (R + 14) * Math.cos(ang), cy + (R + 14) * Math.sin(ang) + 3);
+  });
+  const score = S.whale.score;
+  const col = score > 10 ? "61,220,132" : score < -10 ? "255,107,94" : "139,147,167";
+  ctx.beginPath();
+  axes.forEach((a, i) => {
+    const ang = -Math.PI / 2 + i * Math.PI / 2;
+    const r = R * (Math.abs(a[1]) * 0.85 + 0.12);
+    const x = cx + r * Math.cos(ang), y = cy + r * Math.sin(ang);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = `rgba(${col},.16)`; ctx.fill();
+  ctx.strokeStyle = `rgba(${col},.8)`; ctx.lineWidth = 1.5; ctx.stroke();
+}
+function renderWhaleMetrics() {
+  whaleScoreFor(S.active);
+  const P = S.whale.parts, pc = v => (v > 0 ? "+" : "") + Math.round(v * 100);
+  const cls = v => v > 0.05 ? "mono bull" : v < -0.05 ? "mono bear" : "mono";
+  $("m_cvd").textContent = pc(P.cvd); $("m_cvd").className = cls(P.cvd);
+  $("m_book").textContent = pc(P.book); $("m_book").className = cls(P.book);
+  $("m_delta").textContent = pc(P.delta); $("m_delta").className = cls(P.delta);
+  $("m_prints").textContent = pc(P.prints); $("m_prints").className = cls(P.prints);
+  const s = S.whale.score;
+  $("whaleScoreBig").textContent = (s > 0 ? "+" : "") + s;
+  $("whaleScoreBig").className = "mono text-lg font-bold " + (s > 10 ? "bull" : s < -10 ? "bear" : "text-slate-400");
+  renderRadar();
+}
+
+/* ================================ WIRING ================================= */
+function setActive(sym) {
+  if (!S.watch.includes(sym)) return;
+  S.active = sym;
+  S.cvd = { minutes: [], cum: 0, series: [] };
+  S.prints = []; S.printsNet = 0;
+  S.book = { bid: 0, ask: 0, walls: {} };
+  persist(); renderWatch(); renderCVDChart(); renderPrints();
+  openWS();
+  if (S.candles[sym]) renderActive();
+  refreshSymbol(sym).catch(e => $("biasRow").innerHTML = `<span class="bear">${esc(e.message)}</span>`);
+}
+function addSymbol() {
+  const sym = $("addsym").value.trim().toUpperCase();
+  if (!sym) return;
+  if (S.pairs.length && !S.pairs.includes(sym)) { $("addsym").value = ""; $("paircount").textContent = sym + " is not a tradable USDT perpetual — pick from the list"; return; }
+  if (!S.watch.includes(sym)) {
+    if (S.watch.length >= 8) { $("paircount").textContent = "watchlist capped at 8 pairs to respect API limits"; return; }
+    S.watch.push(sym);
+  }
+  $("addsym").value = "";
+  setActive(sym);
+}
+document.addEventListener("click", async ev => {
+  const chip = ev.target.closest(".chip");
+  if (ev.target.dataset.x) {
+    ev.stopPropagation();
+    const sym = ev.target.dataset.x;
+    if (S.watch.length <= 1) return;
+    S.watch = S.watch.filter(s => s !== sym);
+    if (S.active === sym) setActive(S.watch[0]); else { persist(); renderWatch(); openWS(); }
+    return;
+  }
+  if (chip && chip.dataset.sym && chip.dataset.sym !== S.active) { setActive(chip.dataset.sym); return; }
+  if (ev.target.dataset.calc) {
+    const sig = S.signals.find(s => s.id === ev.target.dataset.calc);
+    if (sig) { $("calcEntry").value = sig.entry; $("calcStop").value = sig.sl; renderCalc(); }
+    return;
+  }
+  if (ev.target.dataset.exec) {
+    const sig = S.signals.find(s => s.id === ev.target.dataset.exec);
+    if (!sig) return;
+    const btn = ev.target, out = $("ord-" + cssId(sig.id));
+    btn.disabled = true; btn.textContent = "Sending…";
+    try {
+      const res = await executeSignal(sig);
+      if (res.cancelled) out.innerHTML = `<div class="note warn mt-2">Cancelled — nothing sent.</div>`;
+      else out.innerHTML = `<div class="note ok mt-2"><b>Orders placed</b> on ${T.env === "live" ? "LIVE" : "testnet"} — entry #${res.entry}, SL #${res.sl}, ${res.trail ? "trail" : "TP"} #${res.tp}. Independent orders (no OCO): if the entry never fills, cancel the rest.</div>`;
+    } catch (e) {
+      out.innerHTML = `<div class="note err mt-2"><b>Order error:</b> ${esc(e.message)}</div>`;
+    } finally { btn.disabled = false; btn.textContent = "Execute"; }
+  }
+});
+$("addbtn").addEventListener("click", addSymbol);
+$("addsym").addEventListener("keydown", e => { if (e.key === "Enter") addSymbol(); });
+$("refreshBtn").addEventListener("click", () => refreshSymbol(S.active).catch(e => $("biasRow").innerHTML = `<span class="bear">${esc(e.message)}</span>`));
+for (const id of ["account", "risk", "maxpos", "calcEntry", "calcStop"])
+  $(id).addEventListener("input", () => { renderCalc(); renderSignals(); persist(); });
+$("printMin").addEventListener("input", persist);
+$("gateChk").addEventListener("change", () => { renderSignals(); persist(); });
+$("env").addEventListener("change", () => {
+  T.connected = false; connBadge(false); renderSignals();
+  tstatus($("env").value === "live"
+    ? "<b>LIVE selected.</b> Real money. Enter your LIVE API key/secret and press Connect."
+    : "Testnet selected. Free paper-trading keys: <b>testnet.binancefuture.com</b>.", $("env").value === "live" ? "err" : "");
+});
+$("connect").addEventListener("click", async () => {
+  const b = $("connect"); b.disabled = true; b.textContent = "Connecting…";
+  try { await connectBinance(); } catch (e) { tstatus("<b>Connection failed:</b> " + esc(e.message), "err"); }
+  finally { b.disabled = false; b.textContent = "Connect"; }
+});
+$("cancelall").addEventListener("click", async () => {
+  try {
+    if (!T.connected) throw new Error("Connect first.");
+    if (!confirm(`Cancel ALL open ${S.active} orders on ${T.env === "live" ? "LIVE" : "testnet"}?`)) return;
+    await signed("DELETE", "/fapi/v1/allOpenOrders", { symbol: S.active });
+    tstatus(`All open ${S.active} orders cancelled.`, "ok");
+  } catch (e) { tstatus("<b>Cancel failed:</b> " + esc(e.message), "err"); }
+});
+$("waBtn").addEventListener("click", () => { clearTimeout(S.timers.wa); whaleAlertPoll(); });
+
+/* =============================== SCHEDULERS ============================== */
+let rrIdx = 0;
+function startTimers() {
+  setInterval(() => { $("clock").textContent = nowStr() + " · " + new Date().toUTCString().slice(17, 22) + " UTC"; }, 1000);
+  setInterval(() => {           // flush live UI at 1Hz — cheap, low-latency feel
+    if (cvdDirty) { renderCVDChart(); cvdDirty = false; }
+    if (printsDirty) { renderPrints(); printsDirty = false; }
+    if (bookDirty) { renderBook(); bookDirty = false; }
+    renderWhaleMetrics();
+  }, 1000);
+  setInterval(() => refreshSymbol(S.active).catch(e => console.warn(e)), CFG.refreshMsActive);
+  setInterval(() => {
+    const others = S.watch.filter(s => s !== S.active);
+    if (!others.length) return;
+    refreshSymbol(others[rrIdx++ % others.length]).catch(e => console.warn(e));
+  }, 30000);
+  setInterval(() => { if (T.connected) refreshPosCount(); }, 30000);
+}
+
+/* ================================= INIT ================================== */
+async function init() {
+  restore();
+  $("gateThr").textContent = CFG.gateThreshold;
+  renderWatch(); renderCalc();
+  initCharts();
+  openWS();
+  simTransfer();
+  startTimers();
+  try { await loadPairs(); } catch (e) { $("paircount").textContent = "pair list unavailable: " + e.message + " (Binance may be geo-blocked here)"; }
+  let delay = 0;
+  for (const sym of [...S.watch].sort((a, b) => (a === S.active ? -1 : 0) - (b === S.active ? -1 : 0))) {
+    setTimeout(() => refreshSymbol(sym).catch(e => {
+      if (sym === S.active) $("biasRow").innerHTML = `<span class="bear">${esc(e.message)}</span>`;
+    }), delay);
+    delay += 700;
+  }
+}
+init();
+</script>
+</body>
+</html>
