@@ -9,24 +9,28 @@
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
   /* Fallback + fine-grained styling Tailwind CDN doesn't cover */
-  :root{ --green:#3ddc84; --red:#ff6b5e; --amber:#e8c07a; --accent:#5b8cff; }
-  html{-webkit-text-size-adjust:100%}
-  body{background:#0b0d12;color:#e6e8ee;font-family:system-ui,-apple-system,'Segoe UI',sans-serif}
+  :root{ --green:#3ddc84; --red:#ff6b5e; --amber:#e8c07a; --accent:#5b8cff; --tg:#2aa8e0; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html{-webkit-text-size-adjust:100%; overflow-x:hidden}
+  body{background:#0b0d12;color:#e6e8ee;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+    overflow-x:hidden; padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right)}
   ::-webkit-scrollbar{width:8px;height:8px}
   ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
   ::-webkit-scrollbar-track{background:transparent}
   .card{background:#14161d;border:1px solid rgba(255,255,255,.07);border-radius:14px}
   .lbl{font-size:.66rem;color:#8b93a7;text-transform:uppercase;letter-spacing:.7px}
   input,select{background:#1a1d26;border:1px solid rgba(255,255,255,.07);color:#e6e8ee;
-    border-radius:10px;font-size:1rem;outline:none;height:42px;padding:0 12px;width:100%}
+    border-radius:10px;font-size:16px;outline:none;height:42px;padding:0 12px;width:100%}
   input:focus,select:focus{border-color:var(--accent)}
-  .btn{background:var(--accent);color:#fff;border:none;height:42px;padding:0 18px;border-radius:10px;
-    font-size:.9rem;font-weight:600;cursor:pointer;white-space:nowrap}
-  .btn:hover{filter:brightness(1.12)} .btn:disabled{opacity:.5;cursor:wait}
-  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.12);color:#8b93a7}
-  .btn.ghost:hover{color:#e6e8ee;filter:none}
+  .btn{background:var(--accent);color:#fff;border:none;height:42px;min-height:42px;padding:0 18px;border-radius:10px;
+    font-size:.9rem;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;
+    justify-content:center;gap:6px;transition:filter .15s,transform .1s}
+  .btn:hover{filter:brightness(1.12)} .btn:active{transform:scale(.97)} .btn:disabled{opacity:.5;cursor:wait}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.14);color:#aab1c4}
+  .btn.ghost:hover{color:#e6e8ee;filter:none;border-color:rgba(255,255,255,.28)}
   .btn.danger{background:var(--red)}
-  .btn.sm{height:32px;padding:0 12px;font-size:.78rem;border-radius:8px}
+  .btn.sm{height:36px;min-height:36px;padding:0 13px;font-size:.78rem;border-radius:8px}
+  .btn.tg{background:var(--tg)}
   .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.68rem;font-weight:600;line-height:1.5}
   .badge.long{background:rgba(61,220,132,.13);color:var(--green)}
   .badge.short{background:rgba(255,107,94,.13);color:var(--red)}
@@ -43,12 +47,13 @@
   .note.ok{color:#a7e3c1;background:rgba(61,220,132,.07)}
   .note.err{color:#f3aca3;background:rgba(255,107,94,.08)}
   .note.warn{color:var(--amber);background:rgba(232,192,122,.07)}
-  .chip{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:11px;cursor:pointer;
-    background:#1a1d26;border:1px solid rgba(255,255,255,.07);font-size:.82rem;user-select:none;flex:0 0 auto}
+  .chip{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:11px;cursor:pointer;
+    background:#1a1d26;border:1px solid rgba(255,255,255,.07);font-size:.82rem;user-select:none;flex:0 0 auto;
+    min-height:36px}
   .chip.active{border-color:var(--accent);background:rgba(91,140,255,.1)}
-  .chip .x{color:#596076;font-size:.9rem;padding:0 2px}
+  .chip .x{color:#596076;font-size:1rem;padding:2px 3px}
   .chip .x:hover{color:var(--red)}
-  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
   .dot.on{background:var(--green);box-shadow:0 0 6px rgba(61,220,132,.8)}
   .dot.off{background:var(--red)}
   .dot.mid{background:var(--amber)}
@@ -69,20 +74,35 @@
     text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.07)}
   .tbl td{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.05)}
   .tbl tr:last-child td{border-bottom:none}
+  a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){.pulse{animation:none}.btn,.btn:active{transition:none;transform:none}}
+  @media (max-width:640px){
+    .card{border-radius:12px}
+    .btn{padding:0 14px}
+  }
 </style>
 </head>
 <body class="min-h-screen">
-<div class="mx-auto max-w-[1800px] px-3 sm:px-5 pb-16 pt-4">
+<div class="mx-auto max-w-[1800px] px-3 sm:px-5 pb-16 pt-4" style="padding-bottom:calc(4rem + env(safe-area-inset-bottom))">
 
   <!-- ============================== HEADER ============================== -->
-  <header class="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
-    <div>
+  <header class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+    <div class="min-w-0">
       <h1 class="text-lg sm:text-xl font-bold tracking-tight">TriStrat Terminal</h1>
       <div class="text-[11px] text-slate-500">SMC/POI · Liquidity Breakout · Momentum Cross — whale-confluence gated</div>
     </div>
-    <div class="ml-auto flex items-center gap-4 text-xs text-slate-400">
-      <span class="flex items-center gap-2"><span id="wsdot" class="dot off"></span><span id="wstxt">stream off</span></span>
-      <span id="clock" class="mono hidden sm:inline"></span>
+    <div class="flex flex-wrap items-center gap-2 sm:gap-3 sm:ml-auto">
+      <span class="flex items-center gap-2 text-xs text-slate-400 order-1">
+        <span id="wsdot" class="dot off"></span><span id="wstxt">stream off</span>
+      </span>
+      <span id="clock" class="mono hidden sm:inline text-xs text-slate-400 order-2"></span>
+      <a href="https://t.me/sivuminta_bot" target="_blank" rel="noopener noreferrer"
+        class="btn tg sm order-3" aria-label="Open Telegram bot to receive confirmed-signal alerts">
+        Receive Alerts
+      </a>
+      <button id="testTelegramBtn" class="btn ghost sm order-4">
+        Test Telegram
+      </button>
     </div>
   </header>
 
@@ -92,7 +112,7 @@
       <div id="watchlist" class="flex gap-2 overflow-x-auto flex-1 min-w-0 pb-1"></div>
       <div class="flex gap-2 items-center shrink-0">
         <input id="addsym" list="pairlist" placeholder="add pair…" autocapitalize="characters" autocorrect="off"
-          spellcheck="false" enterkeyhint="go" class="!h-9 !w-36 text-sm">
+          spellcheck="false" enterkeyhint="go" class="!h-9 !w-36 !text-base">
         <datalist id="pairlist"></datalist>
         <button id="addbtn" class="btn sm">Add</button>
       </div>
@@ -138,7 +158,7 @@
           <h2 class="text-sm font-semibold mb-2">Large prints <span class="text-[10px] text-slate-500 font-normal">aggressive market orders ≥ threshold · live</span></h2>
           <div class="flex items-center gap-2 mb-2">
             <span class="lbl">min $</span>
-            <input id="printMin" type="number" value="100000" step="50000" min="10000" class="!h-8 !w-32 text-sm mono">
+            <input id="printMin" type="number" value="100000" step="50000" min="10000" class="!h-8 !w-32 !text-base mono">
             <span id="printsNet" class="ml-auto mono text-xs">net —</span>
           </div>
           <div id="printsFeed" class="feed"></div>
@@ -176,7 +196,7 @@
         <details>
           <summary class="text-[11px] text-slate-500 hover:text-slate-300">Use real data (Whale Alert API key)</summary>
           <div class="flex gap-2 mt-2">
-            <input id="waKey" type="password" placeholder="whale-alert.io key" class="!h-9 text-sm">
+            <input id="waKey" type="password" placeholder="whale-alert.io key" class="!h-9 !text-base">
             <button id="waBtn" class="btn sm">Go</button>
           </div>
           <div id="waStatus" class="note mt-2 hidden"></div>
@@ -291,8 +311,23 @@ const SESSIONS = [ // UTC hours [start, end)
 ];
 
 /* ================================ STATE ================================== */
+const DEFAULT_PAIRS = [
+  "BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "AVAXUSDT",
+  "DOTUSDT", "MATICUSDT", "LINKUSDT", "TRXUSDT", "SHIBUSDT", "LTCUSDT", "BCHUSDT", "UNIUSDT",
+  "ATOMUSDT", "XLMUSDT", "XMRUSDT", "ETCUSDT", "FILUSDT", "LDOUSDT", "HBARUSDT", "APTUSDT",
+  "ARBUSDT", "VETUSDT", "MKRUSDT", "QNTUSDT", "AAVEUSDT", "OPUSDT", "ALGOUSDT", "GRTUSDT",
+  "RNDRUSDT", "STXUSDT", "EGLDUSDT", "SNXUSDT", "THETAUSDT", "SANDUSDT", "MANAUSDT", "EOSUSDT",
+  "IMXUSDT", "INJUSDT", "APEUSDT", "NEOUSDT", "AXSUSDT", "FTMUSDT", "CRVUSDT", "GALAUSDT",
+  "MINAUSDT", "KAVAUSDT", "CHZUSDT", "XTZUSDT", "FLOWUSDT", "COMPUSDT", "CAKEUSDT", "XECUSDT",
+  "GMXUSDT", "ZECUSDT", "TWTUSDT", "DASHUSDT", "IOTAUSDT", "RUNEUSDT", "ZILUSDT", "ENJUSDT",
+  "1INCHUSDT", "BATUSDT", "LRCUSDT", "ROSEUSDT", "YFIUSDT", "KSMUSDT", "BALUSDT", "SUSHIUSDT",
+  "ENSUSDT", "CELOUSDT", "OCEANUSDT", "WAVESUSDT", "ILVUSDT", "DYDXUSDT", "WLDUSDT", "SEIUSDT",
+  "TIAUSDT", "SUIUSDT", "BLURUSDT", "PEPEUSDT", "FLOKIUSDT", "BONKUSDT", "WIFUSDT", "ORDIUSDT",
+  "1000SATSUSDT", "KASUSDT", "TONUSDT", "NEARUSDT", "ICPUSDT", "FETUSDT", "AGIXUSDT", "JTOUSDT",
+  "PYTHUSDT", "ORCAUSDT", "RAYUSDT"
+];
 const S = {
-  watch: ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+  watch: DEFAULT_PAIRS,
   active: "BTCUSDT",
   pairs: [], filters: {},
   candles: {},          // sym -> {h4,h1,m15,m5} closed candles
@@ -820,14 +855,46 @@ function s3Signal(sym) {
 const TELEGRAM_BOT_TOKEN = "8275564296:AAGpYGfalrxPBa-vonyAjQyiYZwQa9joHT4"; // Put YOUR actual token here
 const TELEGRAM_CHAT_ID = "5274863559";                         // Put YOUR actual chat ID here
 
+document.getElementById('testTelegramBtn').addEventListener('click', () => {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+    alert("Error: Bot Token or Chat ID is missing from the code.");
+    return;
+  }
+
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text: `✅ *Test Notification*\nYour trading terminal is successfully connected!`,
+      parse_mode: 'Markdown'
+    })
+  })
+  .then(res => {
+    if (res.ok) {
+      alert("Test message sent successfully! Check Telegram.");
+    } else {
+      alert("Failed to send message. Double-check your Token and Chat ID.");
+    }
+  })
+  .catch(err => console.error("Test button error:", err));
+});
+
 function sendTelegramMessage(sig) {
   if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
 
   const f = S.filters[sig.sym] || { tickD: 2 };
   const d = Math.max(f.tickD, 2);
 
+  // Change title and emoji based on whether it passed the whale score filter
+  const title = sig.validated
+    ? `🚨 *CONFIRMED SIGNAL: ${sig.sym}* 🚨`
+    : `⚠️ *UNCONFIRMED SETUP: ${sig.sym}* ⚠️`;
+
   // Format the message with Markdown
-  const text = `🚨 *Confirmed Signal: ${sig.sym}* 🚨\n` +
+  const text = `${title}\n` +
                `*Strategy:* ${sig.strat}\n` +
                `*Side:* ${sig.side === 'LONG' ? '🟢 LONG' : '🔴 SHORT'}\n` +
                `*Entry:* ${fmt(sig.entry, d)}\n` +
@@ -885,7 +952,7 @@ function admitSignal(sig) {
   renderSignals();
   if (sig.sym === S.active) renderMarkers();
 
-  // If the signal is validated by the whale score, send it to Telegram
+  // Only confirmed setups (validated by whale-score gate) go to Telegram
   if (sig.validated) {
     sendTelegramMessage(sig);
   }
@@ -1313,7 +1380,7 @@ function addSymbol() {
   if (!sym) return;
   if (S.pairs.length && !S.pairs.includes(sym)) { $("addsym").value = ""; $("paircount").textContent = sym + " is not a tradable USDT perpetual — pick from the list"; return; }
   if (!S.watch.includes(sym)) {
-    if (S.watch.length >= 8) { $("paircount").textContent = "watchlist capped at 8 pairs to respect API limits"; return; }
+    if (S.watch.length >= 120) { $("paircount").textContent = "watchlist capped at 120 pairs to respect API limits"; return; }
     S.watch.push(sym);
   }
   $("addsym").value = "";
@@ -1391,7 +1458,12 @@ function startTimers() {
   setInterval(() => {
     const others = S.watch.filter(s => s !== S.active);
     if (!others.length) return;
-    refreshSymbol(others[rrIdx++ % others.length]).catch(e => console.warn(e));
+    // Scan a batch each tick so a large (e.g. 100-pair) watchlist still gets
+    // refreshed on a reasonable cadence instead of one symbol per tick.
+    const batch = Math.max(1, Math.ceil(others.length / 12)); // full rotation ≈ 12 ticks (~6 min)
+    for (let i = 0; i < batch; i++) {
+      refreshSymbol(others[rrIdx++ % others.length]).catch(e => console.warn(e));
+    }
   }, 30000);
   setInterval(() => { if (T.connected) refreshPosCount(); }, 30000);
 }
@@ -1418,3 +1490,4 @@ init();
 </script>
 </body>
 </html>
+
